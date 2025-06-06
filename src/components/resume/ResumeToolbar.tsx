@@ -1,5 +1,5 @@
 "use client";
-import type React from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ACTION_ICONS, DEFAULT_SECTION_TITLES } from '@/lib/constants';
