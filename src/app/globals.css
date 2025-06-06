@@ -109,14 +109,18 @@
   }
   @page {
     size: auto; /* auto is the initial value */
-    margin: 0.5in; /* Adjust margin as needed, or set to 0 */
-    /* You can also try to remove headers and footers, though browser support varies */
-    /* @top-center { content: ""; }
-    @bottom-center { content: ""; } */
+    margin: 0.5in; /* Adjust margin as needed */
+    /* Attempt to remove browser default headers and footers */
+    @top-left { content: ""; }
+    @top-center { content: ""; }
+    @top-right { content: ""; }
+    @bottom-left { content: ""; }
+    @bottom-center { content: ""; }
+    @bottom-right { content: ""; }
   }
   body {
-    margin: 0;
-    padding: 0;
+    margin: 0 !important; /* Ensure no body margin for print */
+    padding: 0 !important; /* Ensure no body padding for print */
     background-color: white !important; /* Ensure background is white for print */
   }
 }
