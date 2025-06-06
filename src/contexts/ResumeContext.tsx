@@ -3,7 +3,7 @@
 
 import type React from 'react';
 import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import type { ResumeData, ResumeSection, SectionType, ExperienceEntry, EducationEntry, ProjectEntry, Skill, BaseSection } from '@/types/resume';
+import type { ResumeData, ResumeSection, SectionType, ExperienceEntry, EducationEntry, ProjectEntry, Skill, BaseSection, SkillsSection as SkillsSectionType } from '@/types/resume';
 import { SECTION_TEMPLATES } from '@/types/resume';
 import { v4 as uuidv4 } from 'uuid'; // For generating unique IDs for NEW items
 
@@ -16,7 +16,6 @@ interface ResumeContextType {
   updateSectionTitle: (sectionId: string, title: string) => void;
   moveSection: (sectionId: string, direction: 'up' | 'down') => void;
   
-  // Specific entry updaters for complex sections
   addExperienceEntry: (sectionId: string) => void;
   updateExperienceEntry: (sectionId: string, entryId: string, updates: Partial<ExperienceEntry>) => void;
   deleteExperienceEntry: (sectionId: string, entryId: string) => void;
@@ -25,7 +24,7 @@ interface ResumeContextType {
   updateEducationEntry: (sectionId: string, entryId: string, updates: Partial<EducationEntry>) => void;
   deleteEducationEntry: (sectionId: string, entryId: string) => void;
 
-  addSkill: (sectionId: string) => void;
+  addSkill: (sectionId: string, skillName?: string) => void; // Modified to accept skillName
   updateSkill: (sectionId: string, skillId: string, updates: Partial<Skill>) => void;
   deleteSkill: (sectionId: string, skillId: string) => void;
 
@@ -49,31 +48,31 @@ const initialResumeData: ResumeData = {
     portfolio: 'yourportfolio.com',
   },
   sections: [
-    { id: 'initial-objective-001', type: 'objective', title: 'Objective', content: 'Seeking a challenging role in a dynamic organization...' },
+    { id: 'fixed-objective-001', type: 'objective', title: 'Objective', content: 'Seeking a challenging role in a dynamic organization...' },
     { 
-      id: 'initial-experience-001', 
+      id: 'fixed-experience-001', 
       type: 'experience', 
       title: 'Experience', 
       entries: [
-        { id: 'initial-exp-entry-001', company: 'Tech Solutions Inc.', role: 'Software Engineer', startDate: 'Jan 2020', endDate: 'Present', description: '- Developed awesome features.\n- Collaborated with team.' },
+        { id: 'fixed-exp-entry-001', company: 'Tech Solutions Inc.', role: 'Software Engineer', startDate: 'Jan 2020', endDate: 'Present', description: '- Developed awesome features.\n- Collaborated with team.' },
       ] 
     },
     {
-      id: 'initial-education-001',
+      id: 'fixed-education-001',
       type: 'education',
       title: 'Education',
       entries: [
-        { id: 'initial-edu-entry-001', institution: 'State University', degree: 'B.S. Computer Science', graduationDate: 'May 2019', description: 'Relevant coursework: Data Structures, Algorithms.'}
+        { id: 'fixed-edu-entry-001', institution: 'State University', degree: 'B.S. Computer Science', graduationDate: 'May 2019', description: 'Relevant coursework: Data Structures, Algorithms.'}
       ]
     },
     {
-      id: 'initial-skills-001',
+      id: 'fixed-skills-001',
       type: 'skills',
       title: 'Skills',
       skills: [
-        { id: 'initial-skill-001', name: 'JavaScript'},
-        { id: 'initial-skill-002', name: 'React'},
-        { id: 'initial-skill-003', name: 'Node.js'},
+        { id: 'fixed-skill-001', name: 'JavaScript'},
+        { id: 'fixed-skill-002', name: 'React'},
+        { id: 'fixed-skill-003', name: 'Node.js'},
       ]
     }
   ],
@@ -88,7 +87,7 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
 
   const addSection = useCallback((type: SectionType) => {
     const newSectionBase = SECTION_TEMPLATES[type]();
-    const newSection: ResumeSection = { ...newSectionBase, id: uuidv4() } as ResumeSection; // New sections get dynamic UUIDs
+    const newSection: ResumeSection = { ...newSectionBase, id: uuidv4() } as ResumeSection;
     setResumeData(prev => ({ ...prev, sections: [...prev.sections, newSection] }));
   }, []);
 
@@ -122,14 +121,13 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
     });
   }, []);
 
-  // Helper for sections with multiple entries (Experience, Education, Projects)
   interface BaseEntrySection<E extends { id: string }> extends BaseSection {
     entries: E[];
   }
 
   const createEntryUpdater = <E extends { id: string }, S extends BaseEntrySection<E>>(sectionType: S['type']) => {
     const addEntry = (sectionId: string, newEntryData: Omit<E, 'id'>) => {
-      const newEntry = { ...newEntryData, id: uuidv4() } as E; // New entries get dynamic UUIDs
+      const newEntry = { ...newEntryData, id: uuidv4() } as E; 
       setResumeData(prev => ({
         ...prev,
         sections: prev.sections.map(s => 
@@ -183,13 +181,13 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
   } = createEntryUpdater<ProjectEntry, ProjectsSection>('projects');
   const addProjectEntry = (sectionId: string) => addProjectEntryInternal(sectionId, { name: '', description: '', technologies: '' });
   
-  const addSkill = useCallback((sectionId: string) => {
-    const newSkill: Skill = { id: uuidv4(), name: '' }; // New skills get dynamic UUIDs
+  const addSkill = useCallback((sectionId: string, skillName: string = '') => { // Default skillName to empty string
+    const newSkill: Skill = { id: uuidv4(), name: skillName };
     setResumeData(prev => ({
       ...prev,
       sections: prev.sections.map(s =>
         s.id === sectionId && s.type === 'skills'
-        ? { ...s, skills: [...(s as SkillsSection).skills, newSkill] }
+        ? { ...s, skills: [...(s as SkillsSectionType).skills, newSkill] }
         : s
       )
     }));
@@ -200,7 +198,7 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
       ...prev,
       sections: prev.sections.map(s =>
         s.id === sectionId && s.type === 'skills'
-        ? { ...s, skills: (s as SkillsSection).skills.map(sk => sk.id === skillId ? { ...sk, ...updates } : sk) }
+        ? { ...s, skills: (s as SkillsSectionType).skills.map(sk => sk.id === skillId ? { ...sk, ...updates } : sk) }
         : s
       )
     }));
@@ -211,7 +209,7 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
       ...prev,
       sections: prev.sections.map(s =>
         s.id === sectionId && s.type === 'skills'
-        ? { ...s, skills: (s as SkillsSection).skills.filter(sk => sk.id !== skillId) }
+        ? { ...s, skills: (s as SkillsSectionType).skills.filter(sk => sk.id !== skillId) }
         : s
       )
     }));
@@ -236,7 +234,7 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
           break;
         case 'education':
           section.entries.forEach(entry => {
-            plainText += `${entry.degree} from ${entry.institution} (Graduated: ${entry.graduationDate})\n${entry.description}\n\n`;
+            plainText += `${entry.degree} from ${entry.institution} (Graduated: ${entry.graduationDate})\n${entry.description || ''}\n\n`;
           });
           break;
         case 'skills':
@@ -286,6 +284,8 @@ export const useResume = (): ResumeContextType => {
   return context;
 };
 
+// Re-declaring these here to avoid circular dependency or overly complex type exports from types/resume.ts
+// if they were only defined there and imported into both. This is a common pattern in context files.
 interface ExperienceSection extends BaseSection {
   type: 'experience';
   entries: ExperienceEntry[];
@@ -296,10 +296,11 @@ interface EducationSection extends BaseSection {
   entries: EducationEntry[];
 }
 
-interface SkillsSection extends BaseSection {
-  type: 'skills';
-  skills: Skill[];
-}
+// Using SkillsSectionType from import as it's directly used.
+// interface SkillsSection extends BaseSection {
+//   type: 'skills';
+//   skills: Skill[];
+// }
 
 interface ProjectsSection extends BaseSection {
   type: 'projects';
