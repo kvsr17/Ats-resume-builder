@@ -102,3 +102,21 @@
     @apply font-headline;
   }
 }
+
+@media print {
+  .no-print, .no-print * {
+    display: none !important;
+  }
+  @page {
+    size: auto; /* auto is the initial value */
+    margin: 0.5in; /* Adjust margin as needed, or set to 0 */
+    /* You can also try to remove headers and footers, though browser support varies */
+    /* @top-center { content: ""; }
+    @bottom-center { content: ""; } */
+  }
+  body {
+    margin: 0;
+    padding: 0;
+    background-color: white !important; /* Ensure background is white for print */
+  }
+}
